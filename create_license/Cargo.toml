@@ -6,11 +6,6 @@ edition = "2021"
 [env]
 OPENSSL_NO_VENDOR = true
 
-
-[lib]
-name = "my_funcs"
-path = "src/my_crypt.rs"
-
 [[bin]]
 name = "bootstrap"
 path = "src/main.rs"
