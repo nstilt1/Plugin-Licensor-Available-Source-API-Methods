@@ -1,0 +1,15 @@
+*.sh
+*.bat
+auth_JUCE_2/
+create_company/
+create_plugin/
+get_license/
+server_test/
+scripting/
+builds/
+target/
+oldBuilds/
+old/
+*.lock
+private.rs
+custom.rs

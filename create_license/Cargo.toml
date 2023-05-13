@@ -1,0 +1,57 @@
+[package]
+name = "create_license"
+version = "0.1.0"
+edition = "2021"
+
+[env]
+OPENSSL_NO_VENDOR = true
+
+
+[lib]
+name = "my_funcs"
+path = "src/my_crypt.rs"
+
+[[bin]]
+name = "bootstrap"
+path = "src/main.rs"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+
+# Starting in Rust 1.62 you can use `cargo add` to add dependencies 
+# to your project.
+#
+# If you're using an older Rust version,
+# download cargo-edit(https://github.com/killercup/cargo-edit#installation) 
+# to install the `add` subcommand.
+#
+# Running `cargo add DEPENDENCY_NAME` will
+# add the latest version of a dependency to the list,
+# and it will keep the alphabetic ordering for you.
+
+[dependencies]
+lambda_http = { version = "0.7", default-features = false, features = ["apigw_rest"] }
+lambda_runtime = "0.8"
+tokio = { version = "1", features = ["macros"] }
+tracing = { version = "0.1", features = ["log"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
+substring = "1.4.5"
+rusoto_core = "0.48.0"
+rusoto_dynamodb = "0.48.0"
+radix_fmt = "1"
+serde = "^1"
+serde_json = "^1"
+serde_derive = "^1"
+num-bigint = "0.4"
+num-traits = "0.2"
+num-integer = "0.1.45"
+openssl-sys = "0.9.83"
+openssl = { version = "0.10.48", features = ["vendored"] }
+rand = "0.8.5"
+sha3 = "0.10.6"
+base64 = "0.21.0"
+aes-gcm = "0.10.1"
