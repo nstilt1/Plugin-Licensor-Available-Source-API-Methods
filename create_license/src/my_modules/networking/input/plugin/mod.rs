@@ -9,4 +9,5 @@ pub struct Plugin {
     // use machine_limit to set a custom machine_limit for this plugin
     pub machine_limit: Option<String>,
     pub subtotal: String,
+    pub custom_success_message: Option<String>,
 }

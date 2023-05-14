@@ -158,9 +158,9 @@ impl super::Decrypted {
                 ("license_type", &product.license_type)]
             );
             
-            let incr = user_license.increase_float("subtotal", &product.subtotal);
-            let mini_license_item = license_plugin.insert_license(
-                None, 
+            let increase_result = user_license.increase_float("subtotal", &product.subtotal);
+            license_plugin = license_plugin.insert_license(
+                product.custom_success_message, 
                 self.first_name.as_ref().unwrap().as_str(), 
                 self.last_name.as_ref().unwrap().as_str(), 
                 &product.license_type, 
