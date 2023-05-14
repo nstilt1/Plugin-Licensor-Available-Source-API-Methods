@@ -14,3 +14,4 @@ old/
 *.lock
 private.rs
 custom.rs
+*.code-workspace
