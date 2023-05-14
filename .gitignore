@@ -4,6 +4,7 @@ auth_JUCE_2/
 create_company/
 create_plugin/
 get_license/
+backups/
 server_test/
 scripting/
 builds/
