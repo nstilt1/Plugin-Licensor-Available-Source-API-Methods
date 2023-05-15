@@ -20,7 +20,7 @@ pub trait Maps {
      */
     fn insert_license(
         &mut self, 
-        custom_success: Option<&str>, 
+        custom_success: Option<String>, 
         first_name: &str, 
         last_name: &str, 
         license_type: &str, 
@@ -143,7 +143,7 @@ impl Maps for HashMap<String, AttributeValue> {
         if custom_success.is_none() {
             cust_success = "";
         }else{
-            cust_success = &custom_success.unwrap();
+            cust_success = custom_success.as_ref().unwrap();
         }
         let mut result =  self.insert_strings(vec![
             ("ActivationTime", "0"),

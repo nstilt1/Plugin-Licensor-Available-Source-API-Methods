@@ -159,8 +159,8 @@ impl super::Decrypted {
             );
             
             let increase_result = user_license.increase_float("subtotal", &product.subtotal);
-            license_plugin = license_plugin.insert_license(
-                product.custom_success_message, 
+            let mini_license_item = license_plugin.insert_license(
+                product.custom_success_message.to_owned(), 
                 self.first_name.as_ref().unwrap().as_str(), 
                 self.last_name.as_ref().unwrap().as_str(), 
                 &product.license_type, 
@@ -168,12 +168,13 @@ impl super::Decrypted {
                 &self.order_id,
                 should_increase
             );
-            if incr.as_ref().is_err() {
-                return Err(incr.unwrap_err());
+            if increase_result.as_ref().is_err() {
+                return Err(increase_result.unwrap_err());
             }
             if mini_license_item.as_ref().is_err() {
                 return Err(mini_license_item.unwrap_err());
             }
+            license_plugin = mini_license_item.unwrap();
 
             user_item_licenses.insert_map(&product_id, Some(user_license));
 
