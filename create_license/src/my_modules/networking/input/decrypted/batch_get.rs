@@ -43,7 +43,7 @@ impl Decrypted {
             USERS_TABLE_NAME.to_owned(),
             KeysAndAttributes {
                 consistent_read: Some(true),
-                keys: vec![HashMap::new_map(vec![("company", &encrypted_comp_id),
+                keys: vec![HashMap::new_map(vec![("company", &self.store_id),
                 ("uuid", &self.uuid)])],
                 ..Default::default()
             }

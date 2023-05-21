@@ -63,7 +63,7 @@ impl Decrypted {
             }
             user_info = HashMap::new_map(
                 vec![
-                    ("company", &encrypt_company_id(&self.store_id)),
+                    ("company", &self.store_id),
                     ("uuid", &self.uuid),
                     ("emailHash", &self.email.as_ref().unwrap()),
                     ("licenseIndex", &self.license_index.as_ref().unwrap()),

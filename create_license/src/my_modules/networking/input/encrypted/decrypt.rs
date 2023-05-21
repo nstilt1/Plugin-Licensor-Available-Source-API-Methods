@@ -12,7 +12,7 @@ impl Encrypted {
      */
     pub async fn decrypt(&self) -> Result<Decrypted, HttpError> {
         let current_time = SystemTime::duration_since (&SystemTime::now(), UNIX_EPOCH).unwrap().as_secs();
-        if self.timestamp.parse::<u64>().unwrap() < current_time - 300 {
+        if self.timestamp.parse::<u64>().unwrap() < current_time - 60 {
             return Err((400, "Error: Timestamp invalid").into());
         }
         let signature = self.signature.to_owned();
