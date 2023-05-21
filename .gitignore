@@ -16,3 +16,4 @@ private.rs
 custom.rs
 *.code-workspace
 phptesting/
+*.zip
