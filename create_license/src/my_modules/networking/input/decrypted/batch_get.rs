@@ -23,14 +23,14 @@ impl Decrypted {
     pub async fn batch_get(&mut self) -> Result<(), HttpError> {
 
         if self.company_item.is_some() || self.user_item.is_some() || self.plugin_items.is_some() {
-            return Err(HttpError::new(500, "self.batch_get() was called twice"));
+            return Err("self.batch_get() was called twice".into());
         }
 
         let client: DynamoDbClient = DynamoDbClient::new(Region::UsEast1);
 
         let mut req_items: HashMap<String, KeysAndAttributes> = HashMap::new();
 
-        let encrypted_comp_id = encrypt_company_id(&self.company);
+        let encrypted_comp_id = encrypt_company_id(&self.store_id);
         req_items.insert(
             COMPANY_TABLE_NAME.to_owned(),
             KeysAndAttributes {
@@ -94,8 +94,17 @@ impl Decrypted {
             }
         ).await;
 
+        //return Err("made it to 97".into());
+        // error below here
 
-        let responses = batch_get_out.get_item_vec_map().unwrap().to_owned();
+        let batch_get_item_vec_map = batch_get_out.get_item_vec_map();
+        if batch_get_item_vec_map.is_err() {
+            return Err(batch_get_item_vec_map.unwrap_err());
+        }
+        let responses = batch_get_item_vec_map.unwrap().to_owned();
+
+        //return Err("Made it to 106".into());
+        // error below here
 
         let company_opt = responses.get(COMPANY_TABLE_NAME).to_owned();
         let user_opt = responses.get(USERS_TABLE_NAME).to_owned();
@@ -108,15 +117,18 @@ impl Decrypted {
         let plugins_vec = plugins_opt.unwrap();
         
         if comp_vec.len() == 1 {
-            self.company_item = Some(comp_vec[1].to_owned());
+            self.company_item = Some(comp_vec[0].to_owned());
         }else{
             return Err((403, "Forbidden").into());
         }
 
+        // error above here
+        //return Err("Made it to 122".into());
+
         if plugins_vec.len() == plugin_ids.len() {
             let mut plugin_map: HashMap<String, HashMap<String, AttributeValue>> = HashMap::new();
             for plugin in plugins_vec {
-                let plugin_id_result = plugin.get_data("id", S);
+                let plugin_id_result = plugin.get_data("id", S, "CLNIDBG131");
                 if plugin_id_result.as_ref().is_err() {
                     return Err(plugin_id_result.unwrap_err());
                 }
@@ -132,15 +144,15 @@ impl Decrypted {
         }else{
             return Err((500, "Error CLMR222").into());
         }
-
-        
+        // error above here
+        //return Err("Made it to 136".into());
         // user doesn't need to exist yet
         if user_opt.is_some() {
             let user_vec = user_opt.unwrap();
             let len = user_vec.len();
             if len == 1 {
                 self.user_item = Some(user_vec[0].to_owned())
-            }else if len != 1 {
+            }else if len != 0 {
                 return Err((500, "Error CLMR212").into());
             }
         }

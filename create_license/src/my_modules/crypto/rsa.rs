@@ -11,12 +11,11 @@ use crate::my_modules::utils::to_base64::*;
 
 use crate::my_modules::networking::output::error::HttpError;
 
-use super::sha::Hashing;
-
+//use super::sha::Hashing;
 pub trait Crypto {
     fn rsa_decrypt (&self) -> Result<Vec<u8>, HttpError>;
     fn sign(&self) -> Result<String, HttpError>;
-    fn rsa_encrypt(&self, data: [u8; 16]) -> Result<String, String>;
+    fn rsa_encrypt(&self, data: [u8; 16]) -> Result<String, HttpError>;
 }
 impl Crypto for String {
 
@@ -47,24 +46,28 @@ impl Crypto for String {
             return Err((0,format!("Error R57: {:?}", decrypt_result.unwrap_err())).into());
         }
         //let decrypted_bytes_amt = decrypt_result.unwrap();
-        return Ok(buf.to_owned());
+        return Ok(buf[0..decrypt_result.unwrap()].to_owned());
     }
     /**
      * Encrypts string, the string is usually an AES Key.
      */
-    fn rsa_encrypt (&self, data: [u8; 16]) -> Result<String, String> {
-        let pubkey_result = Rsa::public_key_from_pem(self.as_bytes());
+    fn rsa_encrypt (&self, data: [u8; 16]) -> Result<String, HttpError> {
+        let pubkey_b_r = self.from_base64();
+        if pubkey_b_r.is_err() {
+            return Err(pubkey_b_r.unwrap_err());
+        }
+        let pubkey_result = Rsa::public_key_from_pem(&pubkey_b_r.unwrap());
         if pubkey_result.is_err() {
-            return Err(format!("Error CCR78: {:?}", pubkey_result.unwrap_err()));
+            return Err(format!("Error CCR78: {:?}", pubkey_result.unwrap_err()).into());
         }
         let pubkey = pubkey_result.unwrap();
         let mut buf = vec![0; 2048];
         let encrypted = pubkey.public_encrypt(&data, &mut buf, Padding::PKCS1);
         if encrypted.is_err() {
-            return Err(format!("Error CCR84: {:?}", encrypted.unwrap_err()));
+            return Err(format!("Error CCR84: {:?}", encrypted.unwrap_err()).into());
         }
         
-        let encoded = buf.to_base64();
+        let encoded = buf[0..encrypted.unwrap()].to_base64();
         return Ok(encoded);
     }
     /**
@@ -96,7 +99,6 @@ impl Crypto for String {
     }
 }
 
-
 /**
  * Hashes signed_stuff, then it takes a signature and compares it
  */
@@ -104,25 +106,55 @@ pub fn verify_signature(public_key: &str, signed_stuff: &str, signature: &str)
 -> Result<(), HttpError> {
     //let public_key = public_key_opt.unwrap().s.as_ref().unwrap();
     
-    let public_pkey = PKey::public_key_from_pem(&public_key.to_owned().as_bytes()).unwrap();
+    let pkey_res = public_key.from_base64();
+    if pkey_res.as_ref().is_err() {
+        return Err("Error CCRS109".into());
+    }
+    let public_pkey_res = PKey::public_key_from_pem(&pkey_res.unwrap());
+    if public_pkey_res.is_err() {
+        return Err(format!("Error CCRS115f: {:?}", public_pkey_res.unwrap_err().to_string()).into());
+    }
+    let public_pkey = public_pkey_res.unwrap();
             
-    let mut verifier = Verifier::new(MessageDigest::sha256(), &public_pkey).unwrap();
-    let hash = signed_stuff.to_hash();
-    
-    verifier.update(&hash).unwrap();
+    let verifier_res = Verifier::new(MessageDigest::sha256(), &public_pkey);
+    if verifier_res.is_err() {
+        return Err(format!("Error CCRS121i: {:?}", verifier_res.err().unwrap().to_string()).into());
+    }
+    let mut verifier = verifier_res.unwrap();
+    let pad_res = verifier.set_rsa_padding(Padding::PKCS1);
+    if pad_res.is_err() {
+        return Err("Oops on line 115 of rsa".into());
+    }
+    /*
+    let hash_result = signed_stuff.to_hash();
+    if hash_result.is_err() {
+        return Err(hash_result.unwrap_err());
+    }
+    let hash = hash_result.unwrap();
+    */
+    let verification_result = verifier.update(signed_stuff.as_bytes());
+    //let verification_result = verifier.update(&hash);
+    if verification_result.is_err() {
+        return Err(format!("Error CCRS120: {:?}", verification_result.unwrap_err().to_string()).into());
+    }
+    verification_result.unwrap();
 
     let sig = signature.from_base64();
     if sig.is_err() {
-        return Err((400, "Error: Signature must be base64 encoded.").into())
+        return Err((400, "Error: Signature must be base64 encoded.").into());
     }
 
-    if !verifier.verify(sig.unwrap().as_slice()).unwrap() {
-        return Err((403, "You shall not pass".to_owned()).into());
+    let verify_result = verifier.verify(sig.unwrap().as_slice());
+    if verify_result.is_err() {
+        return Err(format!("Error CPRS149w: {:?}", verify_result.err().unwrap().to_string()).into());
+    }
+    if !verify_result.unwrap() {
+        //return Err(format!("Hashed: \n{:?}\nSignature:{:?}", hash.to_base64(), signature).into());
+        return Err((403, "You.. shall not pass.").into());
     }
 
     return Ok(());
 }
-
 
 
 pub fn validate_key_size(pub_key: &str, bit_requirement: u32)
@@ -137,6 +169,3 @@ pub fn validate_key_size(pub_key: &str, bit_requirement: u32)
     }
     return Ok(());
 }
-
-
-

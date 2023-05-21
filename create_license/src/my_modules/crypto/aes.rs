@@ -10,7 +10,7 @@ use base64::{engine::general_purpose, Engine as _};
 use crate::my_modules::networking::output::error::HttpError;
 
 pub trait CryptoAES {
-    fn aes_encrypt(&self) -> Result<([u8; 16], String, String), &str>;
+    fn aes_encrypt(&self) -> Result<([u8; 16], String, String), HttpError>;
     fn aes_decrypt(&self, key_bytes: Vec<u8>, nonce: &str) -> Result<String, HttpError>;
 }
 impl CryptoAES for String {
@@ -18,7 +18,7 @@ impl CryptoAES for String {
      * Encrypts data
      * Returns (key, nonce, encrypted string)
      */
-    fn aes_encrypt(&self) -> Result<([u8; 16], String, String), &str> {
+    fn aes_encrypt(&self) -> Result<([u8; 16], String, String), HttpError> {
         let mut key_bytes = [0u8; 16];
         rand::thread_rng().fill(&mut key_bytes);
 
@@ -38,7 +38,7 @@ impl CryptoAES for String {
                 aad: b"" 
             });
         if cipher_text_result.is_err() {
-            return Err("Error A21");
+            return Err("Error A21".into());
         }
         let cipher_text = general_purpose::STANDARD.encode(cipher_text_result.unwrap());
         
@@ -55,11 +55,11 @@ impl CryptoAES for String {
      */
     fn aes_decrypt(&self, key_bytes: Vec<u8>, nonce: &str) -> Result<String, HttpError> {
         // let mut key_bytes = [0u8];
-        let key_slice_result = general_purpose::STANDARD.decode(key_bytes);
-        if key_slice_result.is_err() {
-            return Err(format!("Error A41: {:?}", key_slice_result.unwrap_err()).into());
-        }
-        let key_bytes = key_slice_result.unwrap();
+        //let key_slice_result = general_purpose::STANDARD.decode(key_bytes);
+        //if key_slice_result.is_err() {
+        //    return Err(format!("Error A41: {:?}\n{}", key_slice_result.unwrap_err()).into());
+        //}
+        //let key_bytes = key_slice_result.unwrap();
 
         // let mut nonce_bytes = [0u8; 12];
         let nonce_slice_result = general_purpose::STANDARD.decode(nonce);
@@ -76,12 +76,11 @@ impl CryptoAES for String {
             return Err((500, "Error A59".to_string()).into());
         }
         let ciphertext = ciphertext_result.unwrap();
-
-        let decrypt_result =  cipher.decrypt(Nonce::from_slice(&nonce_bytes), Payload { msg: &ciphertext, aad: b"" });
-        
+        //let f = b"...";
+        let decrypt_result =  cipher.decrypt(nonce_bytes.as_slice().into(), ciphertext.as_slice());//, Payload { msg: &ciphertext, aad: b"" });
         if decrypt_result.is_err() {
             
-            return Err(format!("Error A43: {:?}", decrypt_result.unwrap_err()).into());
+            return Err(format!("Error A43: {:?}, nonce_len = {}", decrypt_result.unwrap_err(), nonce_bytes.len()).into());
         }
         let decrypt = decrypt_result.unwrap();
         let string_result = String::from_utf8(decrypt);
@@ -92,4 +91,3 @@ impl CryptoAES for String {
         
     }
 }
-

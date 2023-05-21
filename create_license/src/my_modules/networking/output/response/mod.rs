@@ -17,8 +17,8 @@ use super::{error::HttpError, license::License};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct HttpResponse {
     data: String,
-    key: String,
     nonce: String,
+    key: String,
     timestamp: String,
     signature: String,
 }
@@ -48,30 +48,30 @@ impl HttpResponse {
         // aes encrypt and then rsa encrypt the aes key
         let aes_result = license_json.as_ref().unwrap().aes_encrypt();
         if aes_result.as_ref().is_err() {
-            return Err((500, aes_result.unwrap_err().to_string()).into());
+            return Err(aes_result.unwrap_err());
         }
 
-        let pub_key_result = d.company_item.unwrap().get_data("publicKey", S);
+        let pub_key_result = d.company_item.unwrap().get_data("publicKeyA", S, "CLNOR54");
         if pub_key_result.as_ref().is_err() {
             return Err((500, "Error CLOR57s").into());
         }
         
         let aes_stuff = aes_result.unwrap();
         let aes_key_result = pub_key_result.unwrap().rsa_encrypt(aes_stuff.0);
-        if aes_key_result.as_ref().is_err() {return Err((500, aes_key_result.unwrap_err()).into());}
+        if aes_key_result.as_ref().is_err() {return Err(aes_key_result.unwrap_err());}
         
         let aes_key = aes_key_result.unwrap();
         let aes_nonce = &aes_stuff.1;
         let data = aes_stuff.2;
         let time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs().to_string();
-        let sign_result = format!("{}{}{}{}", &data, &aes_key, &aes_nonce, &time).sign();
+        let sign_result = format!("{}{}{}{}", &data, &aes_nonce, &aes_key, &time).sign();
         if sign_result.as_ref().is_err() {
             return Err(sign_result.unwrap_err());
         }
         return Ok(HttpResponse { 
             data, 
-            key: aes_key.to_owned(),
             nonce: aes_nonce.to_string(), 
+            key: aes_key.to_owned(),
             timestamp: time, 
             signature: sign_result.unwrap()
         });

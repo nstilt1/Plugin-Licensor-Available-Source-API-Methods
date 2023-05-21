@@ -52,14 +52,13 @@ impl Decrypted {
         }else{
             request.email = Some(request.email.unwrap().hash_email());
         }
-
         // cleanse and encrypt company ID and plugin IDs
-        request.company = cleanse(&request.company, "", true);
+        request.store_id = cleanse(&request.store_id, "", true);
         request.plugins
             .iter_mut()
             .for_each(|obj| 
                 obj.id = encrypt_plugin_id(
-                    &request.company, 
+                    &request.store_id, 
                     &cleanse(
                         &obj.id, 
                         "", 
@@ -67,12 +66,16 @@ impl Decrypted {
                     )
                 )
         );
-
+        //return Err("Made it to 69".into());
+        // error below here
         let validated = request.validate();
         if validated.as_ref().is_err() {
             return validated;
         }
         request = validated.unwrap();
+
+        //return Err("Made it to 77".into());
+        // error below here
 
         // do the batch_get_items request to initialize the data
         let b_get = request.batch_get().await;

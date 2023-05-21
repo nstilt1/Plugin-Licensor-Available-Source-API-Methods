@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use rusoto_dynamodb::AttributeValue;
+use substring::Substring;
 use crate::my_modules::{
     utils::
     {maps::*, 
@@ -68,7 +69,7 @@ impl super::Decrypted {
                 user_license = user_plugin_result.unwrap();
                 
                 license_plugin = license_plugin_result.unwrap();
-                let current_license_type_result = license_plugin.get_data("license_type", S);
+                let current_license_type_result = license_plugin.get_data("LicenseType", S, "CLNIDUL71");
                 if current_license_type_result.is_err() {
                     return Err(current_license_type_result.unwrap_err());
                 }
@@ -91,7 +92,18 @@ impl super::Decrypted {
                     if product.license_type.eq_ignore_ascii_case("subscription"){
                         // check whether user already owns the perpetual version
                         if current_license_type.as_str().exists_in(vec!["perpetual", "online", "offline"]) {
-                            return Err((500, format!("Error: Cannot switch to subscription from a {} license.", &current_license_type)).into());
+                            let is_vowel = current_license_type.substring(0, 1).to_lowercase().exists_in(vec!["a", "e", "i", "o", "u"]);
+                            let article: &str;
+                            if is_vowel {
+                                article = "an";
+                            }else{
+                                article = "a";
+                            }
+                            return Err((500, format!("Error: Cannot switch to subscription from {} {} license.", article, &current_license_type)).into());
+                        }
+                    }else if product.license_type.eq_ignore_ascii_case("online") {
+                        if current_license_type.eq_ignore_ascii_case("offline") {
+                            return Err("Error: Cannot switch to online from offline license".into());
                         }
                     }
                 }else{
@@ -113,7 +125,7 @@ impl super::Decrypted {
             }
             let plugin_db = plugin_db_opt.unwrap().to_owned();
 
-            let max_machines_result = plugin_db.get_data("MaxMachinesPerLicense", N);
+            let max_machines_result = plugin_db.get_data("MaxMachinesPerLicense", N, "CLNIDULD116");
             if max_machines_result.as_ref().is_err() {
                 return Err(max_machines_result.unwrap_err());
             }
@@ -144,21 +156,34 @@ impl super::Decrypted {
 
             // check if machine count is over max
             let machines_res = license_plugin.get_m("machines","Error CLNIDU97");
-            if machines_res.as_ref().is_err() {
-                return Err(machines_res.unwrap_err());
-            }
-            let machines = machines_res.unwrap();
-            let machine_count = machines.into_keys().len();
-            if machine_count > machine_count_purchased as usize {
-                user_license.insert_map("machines", None);
-                license_plugin.insert_l("Online", None);
-                license_plugin.insert_l("Offline", None);
+            if machines_res.as_ref().is_ok() {
+                // machines map exists
+                let machines = machines_res.unwrap();
+                let machine_count = machines.into_keys().len();
+                
+                if machine_count > machine_count_purchased as usize && !should_increase {
+                    user_license.insert_map("machines", None);
+                    license_plugin.insert_l("Online", None);
+                    license_plugin.insert_l("Offline", None);
+                }
             }
             user_license.insert_strings(vec![
                 ("license_type", &product.license_type)]
             );
             
             let increase_result = user_license.increase_float("subtotal", &product.subtotal);
+            
+            if increase_result.as_ref().is_err() {
+                return Err(increase_result.unwrap_err());
+            }
+            if should_increase {
+                let increase_result = user_license.increase_number("maxMachines", machine_count_purchased);
+                if increase_result.is_err() {
+                    return Err(increase_result.unwrap_err());
+                }
+            }else{
+                user_license.insert_data("maxMachines", &machine_count_purchased.to_string(), N);
+            }
             let mini_license_item = license_plugin.insert_license(
                 product.custom_success_message.to_owned(), 
                 self.first_name.as_ref().unwrap().as_str(), 
@@ -168,9 +193,6 @@ impl super::Decrypted {
                 &self.order_id,
                 should_increase
             );
-            if increase_result.as_ref().is_err() {
-                return Err(increase_result.unwrap_err());
-            }
             if mini_license_item.as_ref().is_err() {
                 return Err(mini_license_item.unwrap_err());
             }

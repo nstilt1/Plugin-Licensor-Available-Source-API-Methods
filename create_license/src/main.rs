@@ -33,13 +33,19 @@ async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
         return decrypted_request_result.unwrap_err().respond();
     }
     let mut decrypted_request = decrypted_request_result.unwrap();
+    // error below here
 
     // prepare user item and license item
     let user_item = decrypted_request.prepare_to_license().await;
+    // error in prepare_to_license
+    //return error_resp(500, "Error in .update_license");
     let update_license_result = decrypted_request.update_license_data(user_item).await;
     if update_license_result.as_ref().is_err() {
         return update_license_result.unwrap_err().respond();
     }
+
+    // error above here
+    //return error_resp(500, "Made it to 43");
 
     let send_result = decrypted_request.batch_write().await;
     if send_result.as_ref().is_err(){return send_result.unwrap_err().respond();}

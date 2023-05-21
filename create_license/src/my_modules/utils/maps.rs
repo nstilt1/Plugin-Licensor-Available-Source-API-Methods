@@ -39,7 +39,7 @@ pub trait Maps {
      */
     fn insert_map(&mut self, key: &str, data:Option<HashMap<String, AttributeValue>>);
     
-    fn get_data(&self, key: &str, t: char) -> Result<String, HttpError>;
+    fn get_data(&self, key: &str, t: char, e: &str) -> Result<String, HttpError>;
 
     /**
      * Get a Map from the hashmap, or return an error
@@ -68,6 +68,11 @@ pub trait Maps {
     fn append_string(&mut self, key: &str, to_add: &str) -> Result<(), HttpError>;
 
     /**
+     * Get a list from a hashmap, returns error if not found.
+     */
+    fn get_l(&self, key: &str) -> Result<Vec<AttributeValue>, HttpError>;
+
+    /**
      * Insert a List into a hashmap, or overwrite one.
      * Leave to_add empty for a blank list
      */
@@ -75,6 +80,18 @@ pub trait Maps {
 }
 
 impl Maps for HashMap<String, AttributeValue> {
+
+    fn get_l(&self, key: &str) -> Result<Vec<AttributeValue>, HttpError> {
+        let l_opt = self.get(key);
+        if l_opt.is_none() {
+            return Err(format!("Error CLMAPS87l. Key: {}", key).into());
+        }
+        let l_opt = l_opt.unwrap().l.as_ref();
+        if l_opt.is_none() {
+            return Err(format!("Error CLMAP91l. Key: {}", key).into());
+        }
+        return Ok(l_opt.unwrap().to_owned());
+    }
 
     fn insert_l(&mut self, key: &str, to_add: Option<Vec<AttributeValue>>) {
         let to_insert: Vec<AttributeValue>;
@@ -182,10 +199,10 @@ impl Maps for HashMap<String, AttributeValue> {
         return Ok(result);
         
     }
-    fn get_data(&self, key: &str, t: char) -> Result<String, HttpError>{
+    fn get_data(&self, key: &str, t: char, e: &str) -> Result<String, HttpError>{
         let get_opt = self.get(key);
         if get_opt.is_none() {
-            return Err((500, "Oopsie whoopsy, there's been an error. CLM34").into());
+            return Err(format!("Error CLM34. {}", e).into());
         }
         let get: Option<&String>;
         if t == 's' {
@@ -193,10 +210,10 @@ impl Maps for HashMap<String, AttributeValue> {
         }else if t == 'n' {
             get = get_opt.unwrap().n.as_ref();
         }else{
-            return Err((500, "Error CLMU160").into());
+            return Err(format!("Error CLMU160. {}", e).into());
         }
         if get.as_ref().is_none() {
-            return Err((500, "Oopsie whoopsie. Let us know you hit this error, pls. CLM38").into());
+            return Err(format!("Error CLM38. {}", e).into());
         }
         return Ok(get.unwrap().to_owned());
     }

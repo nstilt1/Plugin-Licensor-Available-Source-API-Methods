@@ -11,7 +11,7 @@ impl Decrypted {
         let error = "Error: ";
         let mut errors: Vec<&str> = Vec::new();
         // validate company
-        if self.company.len() < 10 || self.company.len() > 15 {
+        if self.store_id.len() < 10 || self.store_id.len() > 15 {
             errors.push("Invalid company");
         }
 

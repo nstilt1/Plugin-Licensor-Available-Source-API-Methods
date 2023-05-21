@@ -14,7 +14,7 @@ pub fn create_permanent_secret() -> String {
     // the async code
     let mut rng = rand::thread_rng();
     while result.len() != 5 {
-        result.push(dict[rng.gen_range(0..32)] as char);
+        result.push(dict[rng.gen_range(0..dict.len())] as char);
     }
     return result.to_owned();
 }
@@ -27,42 +27,12 @@ pub fn create_permanent_secret() -> String {
  * The hashmap is just the partition key for the license
  */
 pub async fn create_license_code(
-    company: &str, 
-    /*user_exists: &bool,
-    user_obj_opt: Option<&HashMap<String, AttributeValue>>*/) 
-    -> Result<String, String> {
+    company: &str) 
+-> Result<String, String> {
 
     let client = DynamoDbClient::new(rusoto_core::Region::UsEast1);
-    
-    // * check if previous user data exists
-    // * if it does, return the existing license code and attribute values
-    // * for the ID
-    // */ 
-    /*
-    let mut license_map: HashMap<String, AttributeValue>;
-    if user_exists.to_owned() {
-        let user = user_obj_opt.unwrap().to_owned();
-        let license_opt = user.get("licenseIndex");
-        if license_opt.is_some() {
-            let license_attr_val = license_opt.unwrap().to_owned();
-            let license_s_opt = license_attr_val.s.as_ref();
-            if license_s_opt.is_some() {
-                let licenses_str = license_s_opt.unwrap().to_owned();
-                license_map = HashMap::new();
-                license_map.insert("id1".to_owned(), license_attr_val.to_owned());
-                license_map.insert("id2".to_owned(), 
-                                    AttributeValue {s: Some("all".to_owned()), ..Default::default()});
-                return Ok((true, licenses_str.to_owned(), license_map.to_owned()));
-            }
-        }
-    }
-    */
 
-
-    // the following code just generates a new license code and empty map
-    // since the user does not exist
-    
-    
+    // generate code and hashmap
     let dict = "BCDFGHJLMNPQRSTVWXYZ256789".as_bytes();
 
     // this variable is theoretically slightly more efficient 

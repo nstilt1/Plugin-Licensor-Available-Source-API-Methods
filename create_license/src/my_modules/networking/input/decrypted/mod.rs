@@ -11,7 +11,7 @@ pub static LICENSE_TABLE_NAME: &str = "Licenses";
 
 #[derive(Deserialize, Debug)]
 pub struct Decrypted {
-    company: String,
+    store_id: String,
     uuid: String,
     plugins: Vec<Plugin>,
     order_id: String,

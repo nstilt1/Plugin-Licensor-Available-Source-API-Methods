@@ -24,7 +24,7 @@ impl Decrypted {
             return Err((403, "Forbidden").into());
         }
 
-        let pub_key_result = company_item.get_data("publicKey", S);
+        let pub_key_result = company_item.get_data("publicKeyA", S, "CLNIDVS27");
         if pub_key_result.as_ref().is_err() {
             return Err(pub_key_result.unwrap_err());
         }
